@@ -1,7 +1,10 @@
 // Api/Controllers/OrdersController.cs
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Api.Contracts.Orders;
 using Application.DTOs;
 using Application.Features.Orders.Commands;
 using Application.Interfaces;
@@ -72,10 +75,24 @@ namespace Api.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(ApiResponse<Guid>), 201)]
         [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-        public async Task<IActionResult> Create([FromBody] CreateOrderCommand command)
+        public async Task<IActionResult> Create([FromBody] CreateOrderRequest request)
         {
             try
             {
+                if (!Request.Headers.TryGetValue("Idempotency-Key", out var idempotencyKey) || string.IsNullOrWhiteSpace(idempotencyKey))
+                {
+                    return BadRequest(new ApiResponse<object>(1, "É obrigatório informar o header Idempotency-Key.", null));
+                }
+
+                var items = (request.Items ?? new List<CreateOrderItemRequest>())
+                    .Select(item => new OrderItemDto(item.ProductId, item.Quantity))
+                    .ToList();
+
+                var command = new CreateOrderCommand(
+                    request.CustomerId,
+                    items,
+                    idempotencyKey.ToString());
+
                 var id = await _createHandler.Handle(command);
                 return StatusCode(201, new ApiResponse<Guid>(0, "Pedido criado com sucesso.", id));
             }

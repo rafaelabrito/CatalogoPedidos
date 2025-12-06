@@ -46,7 +46,9 @@ namespace Infrastructure.Data.QueryRepositories
                 .Select(c => new CustomerListItemDto(c.Id, c.Name, c.Email, c.Document, c.CreatedAt))
                 .ToListAsync();
 
-            return new PagedResult<CustomerListItemDto>(items, totalCount, pageNumber, pageSize);
+            var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            return new PagedResult<CustomerListItemDto>(items, totalCount, pageNumber, pageSize, totalPages);
         }
 
         private static IQueryable<Customer> ApplySorting(IQueryable<Customer> source, ListCustomersQuery query)

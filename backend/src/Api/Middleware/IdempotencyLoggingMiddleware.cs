@@ -1,25 +1,31 @@
-    // Api/Middleware/IdempotencyLoggingMiddleware.cs
+// Api/Middleware/IdempotencyLoggingMiddleware.cs
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Serilog.Context;
-using System.Threading.Tasks;
 
-public class IdempotencyLoggingMiddleware
+namespace Api.Middleware
 {
-    private readonly RequestDelegate _next;
-
-    public IdempotencyLoggingMiddleware(RequestDelegate next) => _next = next;
-
-    public Task Invoke(HttpContext context)
+    public class IdempotencyLoggingMiddleware
     {
-        if (context.Request.Headers.TryGetValue("Idempotency-Key", out var key))
+        private readonly RequestDelegate _next;
+
+        public IdempotencyLoggingMiddleware(RequestDelegate next)
         {
-            // Adiciona a chave de idempotência ao contexto do Serilog para todas as logs desta requisição
-            using (LogContext.PushProperty("IdempotencyKey", key.ToString()))
-            {
-                return _next(context);
-            }
+            _next = next;
         }
 
-        return _next(context);
+        public async Task InvokeAsync(HttpContext context)
+        {
+            if (context.Request.Headers.TryGetValue("Idempotency-Key", out var key) && !string.IsNullOrWhiteSpace(key))
+            {
+                using (LogContext.PushProperty("IdempotencyKey", key.ToString()))
+                {
+                    await _next(context);
+                    return;
+                }
+            }
+
+            await _next(context);
+        }
     }
 }

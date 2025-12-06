@@ -7,6 +7,7 @@ namespace Application.DTOs
         IEnumerable<T> Items,
         int TotalCount,
         int PageNumber,
-        int PageSize
+        int PageSize,
+        int TotalPages
     );
 }

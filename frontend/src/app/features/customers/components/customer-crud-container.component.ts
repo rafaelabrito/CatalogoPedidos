@@ -43,22 +43,36 @@ type CustomerFiltersFormValue = {
         </button>
       </div>
 
-      <div class="search-section">
+      <!-- <div class="search-section">
         <label for="customer-search" class="sr-only">Buscar cliente</label>
         <input
           id="customer-search"
           type="search"
-          placeholder="Buscar cliente..."
+          placeholder="pesquisar por nome, email ou documento..."
           class="search-input"
-          aria-label="Buscar cliente por nome, email ou documento"
+          aria-label="Buscar cliente"
           [formControl]="searchControl"
         />
-      </div>
+      </div> -->
 
       <div class="filters-section" [formGroup]="filtersForm">
         <div class="filters-grid">
           <div class="filter-group">
-            <label for="sortField">Ordenar por</label>
+            <!-- <label for="customer-search" class="sr-only">Buscar cliente</label> -->
+            <label for="customer-search">Pesquisa</label>
+            <input
+              id="customer-search"
+              type="search"
+              placeholder="pesquisar por nome, email ou documento..."
+              class="search-input"
+              aria-label="Buscar cliente"
+              [formControl]="searchControl"
+            />
+          </div>
+
+
+          <div class="filter-group">
+            <label for="sortField">Ordenação</label>
             <select id="sortField" formControlName="sortField" class="form-control">
               <option value="createdAt">Criado em</option>
               <option value="name">Nome</option>
@@ -70,12 +84,12 @@ type CustomerFiltersFormValue = {
           <div class="filter-group">
             <label for="sortDirection">Direção</label>
             <select id="sortDirection" formControlName="sortDirection" class="form-control">
-              <option value="desc">Descendente</option>
-              <option value="asc">Ascendente</option>
+              <option value="desc">Mais recentes</option>
+              <option value="asc">Mais antigos</option>
             </select>
           </div>
 
-          <div class="filter-group">
+          <!-- <div class="filter-group">
             <label for="emailFilter">Email</label>
             <input
               id="emailFilter"
@@ -83,9 +97,9 @@ type CustomerFiltersFormValue = {
               formControlName="email"
               placeholder="cliente@exemplo.com"
               class="form-control">
-          </div>
+          </div> -->
 
-          <div class="filter-group">
+          <!-- <div class="filter-group">
             <label for="documentFilter">Documento</label>
             <input
               id="documentFilter"
@@ -93,17 +107,17 @@ type CustomerFiltersFormValue = {
               formControlName="document"
               placeholder="Somente números"
               class="form-control">
-          </div>
+          </div> -->
 
-          <div class="filter-group">
+          <!-- <div class="filter-group">
             <label for="createdFrom">Criado a partir de</label>
             <input id="createdFrom" type="date" formControlName="createdFrom" class="form-control">
-          </div>
+          </div> -->
 
-          <div class="filter-group">
+          <!-- <div class="filter-group">
             <label for="createdTo">Criado até</label>
             <input id="createdTo" type="date" formControlName="createdTo" class="form-control">
-          </div>
+          </div> -->
         </div>
 
         <div class="filters-actions">

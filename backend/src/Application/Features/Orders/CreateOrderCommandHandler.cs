@@ -26,56 +26,93 @@ namespace Application.Features.Orders.Commands
 
         public async Task<Guid> Handle(CreateOrderCommand request)
         {
-            // 1. VALIDAÇÃO: Cliente existe
+            if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
+            {
+                throw new InvalidOperationException("A chave de idempotência é obrigatória para criar um pedido.");
+            }
+
+            var existingOrderId = await _orderRepository.GetOrderIdByKeyAsync(request.IdempotencyKey);
+            if (existingOrderId.HasValue)
+            {
+                return existingOrderId.Value;
+            }
+
+            var existingKey = await _orderRepository.GetIdempotencyKeyAsync(request.IdempotencyKey);
+            if (existingKey is not null)
+            {
+                throw new InvalidOperationException("Esta requisição de pedido já foi processada.");
+            }
+
             var customer = await _customerRepository.GetByIdAsync(request.CustomerId);
             if (customer == null)
+            {
                 throw new InvalidOperationException($"Cliente com ID {request.CustomerId} não encontrado.");
+            }
 
-            // 2. VALIDAÇÃO: Produtos existem e há estoque suficiente
+            if (request.Items == null || request.Items.Count == 0)
+            {
+                throw new InvalidOperationException("O pedido deve conter ao menos um item.");
+            }
+
             var stockUpdates = new Dictionary<Guid, int>();
             var orderItems = new List<OrderItem>();
 
             foreach (var itemDto in request.Items)
             {
+                if (itemDto.Quantity <= 0)
+                {
+                    throw new InvalidOperationException("A quantidade de cada item deve ser maior que zero.");
+                }
+
                 var product = await _productRepository.GetByIdAsync(itemDto.ProductId);
                 if (product == null)
-                    throw new InvalidOperationException($"Produto com ID {itemDto.ProductId} não encontrado.");
-
-                if (product.StockQty < itemDto.Quantity)
-                    throw new InvalidOperationException(
-                        $"Estoque insuficiente para o produto '{product.Name}'. " +
-                        $"Disponível: {product.StockQty}, Solicitado: {itemDto.Quantity}");
-
-                // Registra a atualização de estoque
-                stockUpdates[itemDto.ProductId] = itemDto.Quantity;
-
-                // Cria item do pedido
-                var orderItem = new OrderItem
                 {
-                    Id = Guid.NewGuid(),
-                    ProductId = itemDto.ProductId,
-                    Quantity = itemDto.Quantity,
-                    UnitPrice = product.Price,
-                    LineTotal = product.Price * itemDto.Quantity
-                };
+                    throw new InvalidOperationException($"Produto com ID {itemDto.ProductId} não encontrado.");
+                }
+
+                var requestedQuantity = stockUpdates.TryGetValue(product.Id, out var alreadyRequested)
+                    ? alreadyRequested + itemDto.Quantity
+                    : itemDto.Quantity;
+
+                if (product.StockQty < requestedQuantity)
+                {
+                    throw new InvalidOperationException(
+                        $"Estoque insuficiente para o produto '{product.Name}'. Disponível: {product.StockQty}, Solicitado: {requestedQuantity}");
+                }
+
+                var orderItem = OrderItem.Create(product.Id, itemDto.Quantity, product.Price);
                 orderItems.Add(orderItem);
+
+                stockUpdates[product.Id] = requestedQuantity;
             }
 
-            // 3. CRIAR PEDIDO
-            var order = new Order(request.CustomerId, orderItems);
+            var order = Order.Create(request.CustomerId, orderItems);
+            order.AttachIdempotencyKey(request.IdempotencyKey);
 
-            // 4. IDEMPOTÊNCIA: Gerar chave única
-            var idempotencyKeyValue = Guid.NewGuid().ToString();
-            var idempotencyKey = new IdempotencyKey { Key = idempotencyKeyValue, CreatedAt = DateTime.UtcNow };
+            var idempotencyKey = new IdempotencyKey
+            {
+                Key = request.IdempotencyKey,
+                CreatedAt = DateTime.UtcNow
+            };
 
-            // 5. PERSISTIR TRANSACIONALMENTE
-            var orderId = await _orderRepository.SaveOrderTransactionAsync(
-                order,
-                orderItems,
-                idempotencyKey,
-                stockUpdates);
+            try
+            {
+                return await _orderRepository.SaveOrderTransactionAsync(
+                    order,
+                    orderItems,
+                    idempotencyKey,
+                    stockUpdates);
+            }
+            catch (Exception)
+            {
+                var persistedOrderId = await _orderRepository.GetOrderIdByKeyAsync(request.IdempotencyKey);
+                if (persistedOrderId.HasValue)
+                {
+                    return persistedOrderId.Value;
+                }
 
-            return orderId;
+                throw;
+            }
         }
     }
 }

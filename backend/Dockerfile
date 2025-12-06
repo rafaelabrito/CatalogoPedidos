@@ -5,14 +5,18 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copia a solução e o código fonte
-COPY backend.sln ./
-COPY src/ ./src/
+# Copia apenas os arquivos de projeto para otimizar o cache de restore
+COPY src/Api/Api.csproj src/Api/
+COPY src/Application/Application.csproj src/Application/
+COPY src/Domain/Domain.csproj src/Domain/
+COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
 
-# Restaura dependências e publica em Release
-RUN dotnet restore ./backend.sln
-WORKDIR /src/src/Api
-RUN dotnet publish Api.csproj -c Release -o /app/publish
+# Restaura dependências usando o projeto da API
+RUN dotnet restore src/Api/Api.csproj
+
+# Copia todo o restante do código-fonte e publica em Release
+COPY . .
+RUN dotnet publish src/Api/Api.csproj -c Release -o /app/publish --no-restore
 
 
 # -----------------------------------

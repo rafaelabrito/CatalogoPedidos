@@ -12,10 +12,22 @@ using Domain.Interfaces;
 using Infrastructure.Data;
 using Infrastructure.Data.QueryRepositories;
 using Infrastructure.Data.Repositories;
+using Infrastructure.Data.Seed;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Api.Middleware;
+using Serilog;
+using Serilog.Formatting.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .Enrich.FromLogContext()
+        .WriteTo.Console(new JsonFormatter(renderMessage: true))
+        .WriteTo.File(new JsonFormatter(renderMessage: true), "logs/api-log-.json", rollingInterval: RollingInterval.Day);
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
 	?? builder.Configuration["ConnectionStrings__DefaultConnection"]
@@ -25,6 +37,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 	options.UseNpgsql(connectionString));
 
 builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHealthChecks();
 // CORS: allow the local frontend
 builder.Services.AddCors(options =>
 {
@@ -104,13 +118,16 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
 	var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-	dbContext.Database.Migrate();
+	await dbContext.Database.MigrateAsync();
+	await DataSeeder.SeedAsync(dbContext);
 }
+
+app.UseSerilogRequestLogging();
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<IdempotencyLoggingMiddleware>();
 
 // Enable CORS before routing/controllers
 app.UseCors("Frontend");
-
-app.MapControllers();
 
 // Swagger UI
 app.UseSwagger();
@@ -119,5 +136,8 @@ app.UseSwaggerUI(c =>
 	c.SwaggerEndpoint("/swagger/v1/swagger.json", "Desafio .NET API v1");
 	c.RoutePrefix = "swagger";
 });
+
+app.MapHealthChecks("/health");
+app.MapControllers();
 
 app.Run();

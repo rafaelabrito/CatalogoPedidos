@@ -1,9 +1,9 @@
 // src/app/features/orders/services/order.service.ts
 
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { PagedResult, ApiResponse, OrderListItemDto } from '../../../shared/models/api-models';
+import { PagedResult, ApiResponse, OrderListItemDto, CreateOrderRequest, OrderStatus, OrderDetailsDto } from '../../../shared/models/api-models';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +17,7 @@ export class OrderService {
     pageNumber: number, 
     pageSize: number, 
     customerName: string | null, 
-    status: string | null
+    status: OrderStatus | null
   ): Observable<PagedResult<OrderListItemDto>> {
     let params = new HttpParams()
       .set('pageNumber', pageNumber.toString())
@@ -41,8 +41,11 @@ export class OrderService {
     );
   }
 
-  createOrder(command: any): Observable<number> {
-    return this.http.post<ApiResponse<number>>(this.apiUrl, command).pipe(
+  createOrder(command: CreateOrderRequest, idempotencyKey?: string): Observable<string> {
+    const key = idempotencyKey || this.generateIdempotencyKey();
+    const headers = new HttpHeaders({ 'Idempotency-Key': key });
+
+    return this.http.post<ApiResponse<string>>(this.apiUrl, command, { headers }).pipe(
       map(response => {
         if (response.data) {
           return response.data;
@@ -52,8 +55,8 @@ export class OrderService {
     );
   }
 
-  getOrderById(orderId: number): Observable<any> {
-    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${orderId}`).pipe(
+  getOrderById(orderId: string): Observable<OrderDetailsDto> {
+    return this.http.get<ApiResponse<OrderDetailsDto>>(`${this.apiUrl}/${orderId}`).pipe(
       map(response => {
         if (response.data) {
           return response.data;
@@ -61,5 +64,18 @@ export class OrderService {
         throw new Error('Pedido não encontrado.');
       })
     );
+  }
+
+  private generateIdempotencyKey(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+      return crypto.randomUUID();
+    }
+
+    // fallback simples
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 }

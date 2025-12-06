@@ -77,9 +77,14 @@ namespace Infrastructure.Data.Migrations
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("IdempotencyKeyId")
+                        .HasColumnType("text")
+                        .HasColumnName("idempotency_key");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("status");
 
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("numeric(18, 2)")
@@ -88,6 +93,10 @@ namespace Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("IdempotencyKeyId")
+                        .HasDatabaseName("ix_orders_idempotency_key")
+                        .IsUnique();
 
                     b.ToTable("orders", (string)null);
                 });
@@ -166,6 +175,11 @@ namespace Infrastructure.Data.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Domain.Entities.IdempotencyKey", null)
+                        .WithMany()
+                        .HasForeignKey("IdempotencyKeyId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("Domain.Entities.OrderItem", b =>

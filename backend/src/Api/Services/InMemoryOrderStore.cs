@@ -5,6 +5,7 @@ using System.Linq;
 using Application.DTOs;
 using Application.Features.Orders.Commands;
 using Domain.Entities;
+using Domain.Enums;
 
 public class InMemoryOrderStore
 {
@@ -12,14 +13,10 @@ public class InMemoryOrderStore
 
     public Guid Create(CreateOrderCommand command)
     {
-        var items = command.Items.Select(i => new OrderItem
-        {
-            ProductId = i.ProductId,
-            Quantity = i.Quantity,
-            UnitPrice = 0m,
-            LineTotal = 0m
-        });
-        var order = new Order(command.CustomerId, items);
+        var items = command.Items
+            .Select(i => OrderItem.Create(i.ProductId, i.Quantity, 0m))
+            .ToList();
+        var order = Order.Create(command.CustomerId, items);
         _orders[order.Id] = order;
         return order.Id;
     }
@@ -28,8 +25,12 @@ public class InMemoryOrderStore
     {
         if (_orders.TryGetValue(id, out var o))
         {
-            o.SetStatus(status);
-            return true;
+            if (Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+            {
+                o.SetStatus(parsedStatus);
+                return true;
+            }
+            return false;
         }
         return false;
     }
@@ -49,10 +50,12 @@ public class InMemoryOrderStore
                 o.Id,
                 CustomerName: string.Empty,
                 o.TotalAmount,
-                o.Status,
+                o.Status.ToString(),
                 o.CreatedAt
             ));
-        return new PagedResult<OrderListItemDto>(items.ToList(), _orders.Count, pageNumber, pageSize);
+        var totalCount = _orders.Count;
+        var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+        return new PagedResult<OrderListItemDto>(items.ToList(), totalCount, pageNumber, pageSize, totalPages);
     }
 
     public OrderDetailsDto? GetDetails(Guid id)
@@ -72,7 +75,7 @@ public class InMemoryOrderStore
             CustomerName: string.Empty,
             CustomerDocument: string.Empty,
             o.TotalAmount,
-            o.Status,
+            o.Status.ToString(),
             o.CreatedAt,
             items
         );

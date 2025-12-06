@@ -5,9 +5,10 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap, BehaviorSubject, combineLatest, startWith } from 'rxjs';
 import { OrderService } from '../../services/order.service';
-import { PagedResult, OrderListItemDto } from '../../../../shared/models/api-models';
+import { PagedResult, OrderListItemDto, OrderStatus } from '../../../../shared/models/api-models';
 import { OrderTableComponent } from '../../../../shared/components/order-table/order-table.component';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-order-list-container',
@@ -17,6 +18,7 @@ import { PaginationComponent } from '../../../../shared/components/pagination/pa
     <div class="order-list-container">
       <div class="header-section">
         <h2>Lista de Pedidos</h2>
+        <button type="button" class="btn-primary" (click)="goToCreate()">Novo Pedido</button>
       </div>
       
       <div class="filters">
@@ -43,7 +45,10 @@ import { PaginationComponent } from '../../../../shared/components/pagination/pa
       <div *ngIf="isLoading()" class="loading">Carregando pedidos...</div>
 
       <div *ngIf="!isLoading() && pagedResult()">
-        <app-order-table [orders]="pagedResult()?.items || []"></app-order-table>
+        <app-order-table
+          [orders]="pagedResult()?.items || []"
+          (view)="viewOrder($event)">
+        </app-order-table>
         
         <app-pagination
           *ngIf="pagedResult()"
@@ -66,12 +71,31 @@ import { PaginationComponent } from '../../../../shared/components/pagination/pa
 
     .header-section {
       margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
     h2 {
       color: #333;
       margin: 0;
       font-size: 1.75rem;
+    }
+
+    .btn-primary {
+      padding: 0.65rem 1.25rem;
+      background-color: #0d6efd;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background-color: #0b5ed7;
     }
 
     .filters {
@@ -152,12 +176,12 @@ export class OrderListContainerComponent implements OnInit {
   customerNameFilterControl = new FormControl(''); 
   
   // Controla o filtro por status (CREATED, PAID, etc.)
-  statusFilterControl = new FormControl('ALL'); 
+  statusFilterControl = new FormControl<'ALL' | OrderStatus>('ALL'); 
   
   // Opções de Status (baseado na enumeração do backend)
-  statusOptions = ['ALL', 'CREATED', 'PAID', 'CANCELLED'];
+  statusOptions: Array<'ALL' | OrderStatus> = ['ALL', 'CREATED', 'PAID', 'CANCELLED'];
 
-  constructor(private orderService: OrderService) {}
+  constructor(private orderService: OrderService, private router: Router) {}
 
   ngOnInit(): void {
     
@@ -183,7 +207,7 @@ export class OrderListContainerComponent implements OnInit {
             this.isLoading.set(true); 
             
             // Mapeia 'ALL' para nulo, permitindo ao backend ignorar o filtro
-            const finalStatus = statusFilter === 'ALL' ? null : statusFilter;
+            const finalStatus = statusFilter === 'ALL' ? null : statusFilter as OrderStatus;
             
             // Chama o OrderService (Endpoint GET /api/orders)
             return this.orderService.listOrders(
@@ -213,9 +237,11 @@ export class OrderListContainerComponent implements OnInit {
     }
   }
 
-  viewOrder(orderId: number): void {
-    console.log('Visualizar pedido:', orderId);
-    // Aqui você pode navegar para a página de detalhes
-    // this.router.navigate(['/orders', orderId]);
+  viewOrder(orderId: string): void {
+    this.router.navigate(['/orders', orderId]);
+  }
+
+  goToCreate(): void {
+    this.router.navigate(['/orders', 'new']);
   }
 }

@@ -61,9 +61,9 @@ namespace Infrastructure.Data.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     CustomerId = table.Column<Guid>(type: "uuid", nullable: false),
-                    IdempotencyKeyId = table.Column<string>(type: "text", nullable: true),
+                    idempotency_key = table.Column<string>(type: "text", nullable: true),
                     total_amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false),
+                    status = table.Column<string>(type: "text", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -76,8 +76,8 @@ namespace Infrastructure.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_orders_idempotency_keys_IdempotencyKeyId",
-                        column: x => x.IdempotencyKeyId,
+                        name: "FK_orders_idempotency_keys_idempotency_key",
+                        column: x => x.idempotency_key,
                         principalTable: "idempotency_keys",
                         principalColumn: "Key",
                         onDelete: ReferentialAction.SetNull);
@@ -131,6 +131,12 @@ namespace Infrastructure.Data.Migrations
                 name: "IX_orders_CustomerId",
                 table: "orders",
                 column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_orders_idempotency_key",
+                table: "orders",
+                column: "idempotency_key",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_products_Sku",

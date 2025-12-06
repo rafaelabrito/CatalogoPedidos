@@ -1,118 +1,186 @@
-// tests/Application.Tests/Features/Orders/CreateOrderCommandHandlerTests.cs
-using Xunit;
-using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Application.Features.Orders.Commands;
+using Domain.Entities;
+using Domain.Interfaces;
+using FluentAssertions;
+using Moq;
+using Xunit;
 
-// As referências abaixo são para as classes geradas nas camadas Domain e Application
-// using Domain.Interfaces; 
-// using Application.Features.Orders; 
-// using Domain.Entities;
-// using Domain.Exceptions; 
-
-public class CreateOrderCommandHandlerTests
+namespace Application.Tests.Features.Orders
 {
-    private readonly Mock<IOrderRepository> _mockOrderRepo;
-    private readonly Mock<IProductRepository> _mockProductRepo;
-    private readonly CreateOrderCommandHandler _handler;
-
-    public CreateOrderCommandHandlerTests()
+    public class CreateOrderCommandHandlerTests
     {
-        _mockOrderRepo = new Mock<IOrderRepository>();
-        _mockProductRepo = new Mock<IProductRepository>();
-        _handler = new CreateOrderCommandHandler(
-            _mockOrderRepo.Object, 
-            _mockProductRepo.Object
-        );
-    }
+        private readonly Mock<IOrderRepository> _orderRepositoryMock = new();
+        private readonly Mock<ICustomerRepository> _customerRepositoryMock = new();
+        private readonly Mock<IProductRepository> _productRepositoryMock = new();
+        private readonly CreateOrderCommandHandler _handler;
 
-    [Fact]
-    public async Task Handle_ShouldThrowException_WhenStockIsInsufficient()
-    {
-        // ARRANGE (Preparação)
-        var productId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
-        var idempotencyKey = "test-key";
-        
-        // 1. Configura a lista de produtos (Produto com 5 no estoque)
-        var products = new List<Product>
+        public CreateOrderCommandHandlerTests()
         {
-            new Product("Laptop A", "LPA-001", 1000m, 5) // Estoque atual = 5
-        };
+            _handler = new CreateOrderCommandHandler(
+                _orderRepositoryMock.Object,
+                _customerRepositoryMock.Object,
+                _productRepositoryMock.Object);
+        }
 
-        // 2. Configura o Repositório para retornar os produtos
-        _mockProductRepo
-            .Setup(repo => repo.GetByIdsAsync(It.IsAny<List<Guid>>()))
-            .ReturnsAsync(products);
-
-        // 3. Cria o Comando que requer mais estoque do que o disponível (Requer 10)
-        var command = new CreateOrderCommand(
-            CustomerId: customerId,
-            Items: new List<OrderItemInputDto>
-            {
-                new OrderItemInputDto(ProductId: productId, Quantity: 10) // Tenta pedir 10
-            }
-        );
-
-        // 4. Configura o check de Idempotência (Não usado)
-        _mockOrderRepo
-            .Setup(repo => repo.IsIdempotencyKeyUsedAsync(It.IsAny<string>()))
-            .ReturnsAsync((false, null));
-
-
-        // ACT & ASSERT (Ação e Verificação)
-        
-        // Espera que o método Handle lance a exceção InsufficientStockException
-        await Assert.ThrowsAsync<InsufficientStockException>(() =>
-            _handler.Handle(command, idempotencyKey)
-        );
-    }
-
-    [Fact]
-    public async Task Handle_ShouldReturnOrderId_WhenStockIsSufficient()
-    {
-        // ARRANGE (Preparação)
-        var productId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
-        var idempotencyKey = "test-key-2";
-        var products = new List<Product>
+        [Fact]
+        public async Task Handle_ShouldReturnExistingOrderId_WhenIdempotencyKeyAlreadyProcessed()
         {
-            new Product("Monitor B", "MON-002", 500m, 20) // Estoque suficiente = 20
-        };
-        var command = new CreateOrderCommand(
-            CustomerId: customerId,
-            Items: new List<OrderItemInputDto>
-            {
-                new OrderItemInputDto(ProductId: productId, Quantity: 5) // Pede 5
-            }
-        );
+            // Arrange
+            var existingOrderId = Guid.NewGuid();
+            _orderRepositoryMock
+                .Setup(repo => repo.GetOrderIdByKeyAsync("key"))
+                .ReturnsAsync(existingOrderId);
 
-        _mockProductRepo
-            .Setup(repo => repo.GetByIdsAsync(It.IsAny<List<Guid>>()))
-            .ReturnsAsync(products);
+            var command = new CreateOrderCommand(
+                Guid.NewGuid(),
+                new List<OrderItemDto> { new(Guid.NewGuid(), 1) },
+                "key");
 
-        _mockOrderRepo
-            .Setup(repo => repo.IsIdempotencyKeyUsedAsync(It.IsAny<string>()))
-            .ReturnsAsync((false, null));
-            
-        // Configura a persistência para não fazer nada (simulação)
-        _mockOrderRepo
-            .Setup(repo => repo.SaveOrderTransactionAsync(It.IsAny<Order>(), It.IsAny<string>()))
-            .Returns(Task.CompletedTask);
+            // Act
+            var result = await _handler.Handle(command);
 
+            // Assert
+            result.Should().Be(existingOrderId);
+            _customerRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+            _productRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>()), Times.Never);
+            _orderRepositoryMock.Verify(repo => repo.SaveOrderTransactionAsync(
+                It.IsAny<Order>(),
+                It.IsAny<List<OrderItem>>(),
+                It.IsAny<IdempotencyKey>(),
+                It.IsAny<Dictionary<Guid, int>>()), Times.Never);
+        }
 
-        // ACT
-        var resultId = await _handler.Handle(command, idempotencyKey);
+        [Fact]
+        public async Task Handle_ShouldThrow_WhenStockIsInsufficient()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
 
-        // ASSERT
-        // Verifica se um GUID válido foi retornado
-        Assert.NotEqual(Guid.Empty, resultId);
+            var products = PrepareHappyPathMocks(customerId, new Product("Produto", "SKU-1", 10m, stockQty: 5));
+            var productId = Assert.Single(products.Keys);
 
-        // Verifica se o repositório de pedidos foi chamado para salvar a transação
-        _mockOrderRepo.Verify(
-            repo => repo.SaveOrderTransactionAsync(It.IsAny<Order>(), idempotencyKey), 
-            Times.Once
-        );
+            var command = new CreateOrderCommand(
+                customerId,
+                new List<OrderItemDto> { new(productId, 10) },
+                "key-1");
+
+            // Act
+            Func<Task> action = () => _handler.Handle(command);
+
+            // Assert
+            await action.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Estoque insuficiente*");
+        }
+
+        [Fact]
+        public async Task Handle_ShouldThrow_WhenAccumulatedQuantityExceedsStock()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+
+            var products = PrepareHappyPathMocks(customerId, new Product("Produto", "SKU-1", 10m, stockQty: 5));
+            var productId = Assert.Single(products.Keys);
+
+            var command = new CreateOrderCommand(
+                customerId,
+                new List<OrderItemDto>
+                {
+                    new(productId, 3),
+                    new(productId, 3)
+                },
+                "key-2");
+
+            // Act
+            Func<Task> action = () => _handler.Handle(command);
+
+            // Assert
+            await action.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Estoque insuficiente*");
+        }
+
+        [Fact]
+        public async Task Handle_ShouldPersistOrder_WhenRequestIsValid()
+        {
+            // Arrange
+            var customerId = Guid.NewGuid();
+            var idempotencyKey = "key-3";
+
+            var products = PrepareHappyPathMocks(
+                customerId,
+                new Product("Produto A", "SKU-A", 10m, 10),
+                new Product("Produto B", "SKU-B", 5m, 5));
+
+            var firstProductId = products.Single(p => p.Value.Sku == "SKU-A").Key;
+            var secondProductId = products.Single(p => p.Value.Sku == "SKU-B").Key;
+
+            var command = new CreateOrderCommand(
+                customerId,
+                new List<OrderItemDto>
+                {
+                    new(firstProductId, 2),
+                    new(secondProductId, 1)
+                },
+                idempotencyKey);
+
+            var capturedOrder = default(Order);
+            var capturedItems = default(List<OrderItem>);
+            var capturedKey = default(IdempotencyKey);
+            var capturedStockUpdates = default(Dictionary<Guid, int>);
+            var expectedOrderId = Guid.NewGuid();
+
+            _orderRepositoryMock
+                .Setup(repo => repo.SaveOrderTransactionAsync(
+                    It.IsAny<Order>(),
+                    It.IsAny<List<OrderItem>>(),
+                    It.IsAny<IdempotencyKey>(),
+                    It.IsAny<Dictionary<Guid, int>>() ))
+                .Callback<Order, List<OrderItem>, IdempotencyKey, Dictionary<Guid, int>>((order, items, key, stock) =>
+                {
+                    capturedOrder = order;
+                    capturedItems = items;
+                    capturedKey = key;
+                    capturedStockUpdates = stock;
+                })
+                .ReturnsAsync(expectedOrderId);
+
+            // Act
+            var result = await _handler.Handle(command);
+
+            // Assert
+            result.Should().Be(expectedOrderId);
+            capturedOrder.Should().NotBeNull();
+            capturedOrder!.CustomerId.Should().Be(customerId);
+            capturedOrder.TotalAmount.Should().Be(10m * 2 + 5m * 1);
+            capturedKey.Should().NotBeNull();
+            capturedKey!.Key.Should().Be(idempotencyKey);
+            capturedItems.Should().HaveCount(2);
+            capturedItems!.Should().OnlyContain(item => item.OrderId == capturedOrder.Id);
+            capturedStockUpdates.Should().Contain(new KeyValuePair<Guid, int>(firstProductId, 2));
+            capturedStockUpdates.Should().Contain(new KeyValuePair<Guid, int>(secondProductId, 1));
+        }
+
+        private Dictionary<Guid, Product> PrepareHappyPathMocks(Guid customerId, params Product[] products)
+        {
+            _orderRepositoryMock.Reset();
+            _orderRepositoryMock.Setup(r => r.GetOrderIdByKeyAsync(It.IsAny<string>()))
+                .ReturnsAsync((Guid?)null);
+            _orderRepositoryMock.Setup(r => r.GetIdempotencyKeyAsync(It.IsAny<string>()))
+                .ReturnsAsync((IdempotencyKey?)null);
+
+            _customerRepositoryMock.Reset();
+            _customerRepositoryMock.Setup(r => r.GetByIdAsync(customerId))
+                .ReturnsAsync(new Customer("Cliente", "cliente@email.com", "12345678900"));
+
+            _productRepositoryMock.Reset();
+            var productMap = products.ToDictionary(p => p.Id, p => p);
+            _productRepositoryMock.Setup(r => r.GetByIdAsync(It.IsAny<Guid>()))
+                .ReturnsAsync((Guid id) => productMap.TryGetValue(id, out var product) ? product : null);
+
+            return productMap;
+        }
     }
 }

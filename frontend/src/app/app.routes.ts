@@ -17,6 +17,16 @@ export const routes: Routes = [
       .then(m => m.CustomerCrudContainerComponent)
   },
   {
+    path: 'orders/new',
+    loadComponent: () => import('./features/orders/components/order-create-container/order-create-container.component')
+      .then(m => m.OrderCreateContainerComponent)
+  },
+  {
+    path: 'orders/:id',
+    loadComponent: () => import('./features/orders/containers/order-details/order-details-container.component')
+      .then(m => m.OrderDetailsContainerComponent)
+  },
+  {
     path: 'orders',
     loadComponent: () => import('./features/orders/containers/order-list/order-list-container.component')
       .then(m => m.OrderListContainerComponent)

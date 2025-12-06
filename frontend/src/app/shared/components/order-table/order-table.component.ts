@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OrderListItemDto } from '../../models/api-models';
 
@@ -16,6 +16,7 @@ import { OrderListItemDto } from '../../models/api-models';
             <th>Data</th>
             <th>Status</th>
             <th>Total</th>
+            <th class="sr-only">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -29,9 +30,19 @@ import { OrderListItemDto } from '../../models/api-models';
               </span>
             </td>
             <td>{{ order.totalAmount | currency:'BRL' }}</td>
+            <td>
+              <button
+                type="button"
+                class="btn-link"
+                (click)="view.emit(order.id)"
+                [attr.aria-label]="'Visualizar pedido ' + order.id"
+              >
+                Ver detalhes
+              </button>
+            </td>
           </tr>
           <tr *ngIf="!orders || orders.length === 0">
-            <td colspan="5" class="empty-message">Nenhum pedido encontrado</td>
+            <td colspan="6" class="empty-message">Nenhum pedido encontrado</td>
           </tr>
         </tbody>
       </table>
@@ -93,17 +104,38 @@ import { OrderListItemDto } from '../../models/api-models';
       text-transform: capitalize;
     }
 
-    .status-pending {
-      background-color: #fff3cd;
-      color: #856404;
+    .btn-link {
+      background: none;
+      border: none;
+      color: #0d6efd;
+      cursor: pointer;
+      padding: 0;
+      font-weight: 600;
     }
 
-    .status-processing {
+    .btn-link:hover,
+    .btn-link:focus {
+      text-decoration: underline;
+      outline: none;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+
+    .status-created {
       background-color: #cfe2ff;
       color: #084298;
     }
 
-    .status-completed {
+    .status-paid {
       background-color: #d1e7dd;
       color: #0f5132;
     }
@@ -136,4 +168,5 @@ import { OrderListItemDto } from '../../models/api-models';
 })
 export class OrderTableComponent {
   @Input() orders: OrderListItemDto[] = [];
+  @Output() view = new EventEmitter<string>();
 }

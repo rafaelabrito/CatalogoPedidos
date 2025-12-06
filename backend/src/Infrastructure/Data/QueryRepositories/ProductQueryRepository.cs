@@ -53,7 +53,9 @@ namespace Infrastructure.Data.QueryRepositories
                 .Select(p => new ProductListItemDto(p.Id, p.Name, p.Sku, p.Price, p.StockQty))
                 .ToListAsync();
 
-            return new PagedResult<ProductListItemDto>(items, totalCount, pageNumber, pageSize);
+            var totalPages = totalCount == 0 ? 0 : (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            return new PagedResult<ProductListItemDto>(items, totalCount, pageNumber, pageSize, totalPages);
         }
 
         private static IQueryable<Product> ApplySorting(IQueryable<Product> queryable, ListProductsQuery query)

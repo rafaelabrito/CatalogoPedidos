@@ -27,12 +27,43 @@ export interface ListProductsQuery {
   skipIsActiveDefault?: boolean;
 }
 
+export type OrderStatus = 'CREATED' | 'PAID' | 'CANCELLED';
+
 export interface OrderListItemDto {
-  id: number;
+  id: string;
   customerName: string;
   createdAt: string;
-  status: string;
+  status: OrderStatus;
   totalAmount: number;
+}
+
+export interface OrderDetailsItemDto {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface OrderDetailsDto {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerDocument: string;
+  totalAmount: number;
+  status: OrderStatus;
+  createdAt: string;
+  items: OrderDetailsItemDto[];
+}
+
+export interface CreateOrderItemRequest {
+  productId: string;
+  quantity: number;
+}
+
+export interface CreateOrderRequest {
+  customerId: string;
+  items: CreateOrderItemRequest[];
 }
 
 export { ApiResponse } from './api-response.interface';

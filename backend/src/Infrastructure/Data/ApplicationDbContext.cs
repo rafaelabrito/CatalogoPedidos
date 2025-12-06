@@ -1,6 +1,7 @@
 // backend/src/Infrastructure/Data/ApplicationDbContext.cs
 
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -52,6 +53,16 @@ namespace Infrastructure.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.TotalAmount).HasColumnName("total_amount").HasColumnType("numeric(18, 2)");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+                entity.Property(e => e.Status)
+                    .HasColumnName("status")
+                      .HasConversion(
+                          status => status.ToString().ToUpperInvariant(),
+                          value => Enum.Parse<OrderStatus>(value, true))
+                      .HasMaxLength(20);
+
+                entity.Property(o => o.IdempotencyKeyId)
+                    .HasColumnName("idempotency_key")
+                    .IsRequired(false);
 
                 // Relação 1:N com Customer
                 entity.HasOne<Customer>()
@@ -59,8 +70,15 @@ namespace Infrastructure.Data
                     .HasForeignKey(o => o.CustomerId);
 
                 // Relação com Chave de Idempotência
-                entity.Property(o => o.IdempotencyKeyId)
-                      .IsRequired(false);
+                entity.HasOne<IdempotencyKey>()
+                    .WithMany()
+                    .HasForeignKey(o => o.IdempotencyKeyId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(o => o.IdempotencyKeyId).HasDatabaseName("ix_orders_idempotency_key").IsUnique();
+
+                entity.Navigation(o => o.Items)
+                      .UsePropertyAccessMode(PropertyAccessMode.Field);
             });
 
             // 4. Itens do Pedido

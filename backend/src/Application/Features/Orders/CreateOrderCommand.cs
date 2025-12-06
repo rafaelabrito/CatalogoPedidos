@@ -6,7 +6,8 @@ namespace Application.Features.Orders.Commands
 {
     public record CreateOrderCommand(
         Guid CustomerId,
-        List<OrderItemDto> Items
+        List<OrderItemDto> Items,
+        string IdempotencyKey
     );
 
     public record OrderItemDto(Guid ProductId, int Quantity);

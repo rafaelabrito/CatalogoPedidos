@@ -23,5 +23,6 @@
     <Compile Include="Data\Repositories\**\*.cs" />
     <Compile Include="Data\QueryRepositories\**\*.cs" />
     <Compile Include="Data\Migrations\**\*.cs" />
+    <Compile Include="Data\Seed\**\*.cs" />
   </ItemGroup>
 </Project>

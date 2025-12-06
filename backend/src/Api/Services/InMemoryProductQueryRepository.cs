@@ -13,7 +13,8 @@ namespace Api.Services
                 Items: new List<ProductListItemDto>(),
                 TotalCount: 0,
                 PageNumber: query.PageNumber,
-                PageSize: query.PageSize
+                PageSize: query.PageSize,
+                TotalPages: 0
             );
             return Task.FromResult(empty);
         }

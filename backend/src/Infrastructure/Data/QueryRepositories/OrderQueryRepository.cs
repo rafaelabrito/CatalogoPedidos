@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Application.DTOs;
 using Application.Interfaces;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.QueryRepositories
@@ -38,9 +39,9 @@ namespace Infrastructure.Data.QueryRepositories
             }
 
             // Filtro por status
-            if (!string.IsNullOrEmpty(statusFilter))
+            if (!string.IsNullOrEmpty(statusFilter) && Enum.TryParse<OrderStatus>(statusFilter, true, out var parsedStatus))
             {
-                query = query.Where(o => o.Status == statusFilter);
+                query = query.Where(o => o.Status == parsedStatus);
             }
 
             // Contagem total
@@ -68,15 +69,18 @@ namespace Infrastructure.Data.QueryRepositories
                 o.Id,
                 customerNames.TryGetValue(o.CustomerId, out var name) ? name : "Cliente Desconhecido",
                 o.TotalAmount,
-                o.Status,
+                FormatStatus(o.Status),
                 o.CreatedAt
             )).ToList();
+
+            var totalPages = total == 0 ? 0 : (int)Math.Ceiling(total / (double)pageSize);
 
             return new PagedResult<OrderListItemDto>(
                 items,
                 total,
                 pageNumber,
-                pageSize
+                pageSize,
+                totalPages
             );
         }
 
@@ -106,10 +110,12 @@ namespace Infrastructure.Data.QueryRepositories
                 customer?.Name ?? "Cliente Desconhecido",
                 customer?.Document ?? string.Empty,
                 order.TotalAmount,
-                order.Status,
+                FormatStatus(order.Status),
                 order.CreatedAt,
                 items
             );
         }
+
+        private static string FormatStatus(OrderStatus status) => status.ToString().ToUpperInvariant();
     }
 }
