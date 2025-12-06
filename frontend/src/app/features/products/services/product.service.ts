@@ -41,11 +41,16 @@ export class ProductService {
     });
 
     return this.http.get<ApiResponse<PagedResult<ProductListItemDto>>>(this.apiUrl, { params }).pipe(
+      
       // Mapeia o resultado, ignorando o envelope (cod_retorno, mensagem)
       map(response => {
         if (!response.data) {
           throw new Error('Formato de resposta inválido.');
         }
+
+        console.log('response.data', response.data);
+        console.log('this.apiUrl', this.apiUrl);
+        
 
         const items = response.data.items ?? [];
         const totalCount = response.data.totalCount ?? items.length;

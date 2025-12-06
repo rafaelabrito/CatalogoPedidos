@@ -22,7 +22,8 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
-
+data-volumes/
+.env
 # .NET Core
 project.lock.json
 project.fragment.lock.json

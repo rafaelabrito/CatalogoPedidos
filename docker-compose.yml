@@ -7,7 +7,7 @@ services:
   # ----------------------------------------
   db:
     image: postgres:16-alpine
-    container_name: desafio_postgres_db
+    container_name: catalogo_db
     environment:
       POSTGRES_DB: catalogo_pedidos
       POSTGRES_USER: postgres
@@ -16,8 +16,8 @@ services:
       - "5432:5432"
     networks:
       - app-network
-    # volumes:
-    #   - postgres_data:/var/lib/postgresql/data
+    volumes:
+      - ./data-volumes/postgres/data:/var/lib/postgresql/data
     # restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d catalogo_pedidos"]
@@ -29,6 +29,7 @@ services:
   # 2. SERVIÇO DO BACKEND (.NET 8 Web API)
   # ----------------------------------------
   backend:
+    container_name: catalogo_backend
     build:
       context: ./backend # Caminho para o Dockerfile do backend
       dockerfile: Dockerfile
