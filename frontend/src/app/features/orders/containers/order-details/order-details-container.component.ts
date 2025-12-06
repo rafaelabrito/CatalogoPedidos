@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { OrderDetailsDto } from '../../../../shared/models/api-models';
 import { OrderService } from '../../services/order.service';
 import { OrderDetailsComponent } from '../../components/order-details/order-details.component';
+import { FeedbackService } from '../../../../core/services/feedback.service';
 
 @Component({
   selector: 'app-order-details-container',
@@ -74,6 +75,7 @@ import { OrderDetailsComponent } from '../../components/order-details/order-deta
 export class OrderDetailsContainerComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly orderService = inject(OrderService);
+  private readonly feedback = inject(FeedbackService);
 
   // Simple signal-based state to avoid unnecessary templates logic
   state = signal<
@@ -110,6 +112,7 @@ export class OrderDetailsContainerComponent {
           return this.orderService.getOrderById(orderId).pipe(
             catchError(() => {
               this.state.set({ status: 'error', message: 'Não foi possível carregar os detalhes do pedido.' });
+              this.feedback.error('Não foi possível carregar os detalhes do pedido.');
               return of(null);
             })
           );
@@ -121,6 +124,7 @@ export class OrderDetailsContainerComponent {
           this.state.set({ status: 'loaded', order });
         } else if (this.state().status === 'loading') {
           this.state.set({ status: 'error', message: 'Pedido não encontrado.' });
+          this.feedback.error('Pedido não encontrado.');
         }
       });
   }

@@ -4,6 +4,7 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { Router } from '@angular/router';
 import { CustomerListItemDto } from '../../../../shared/models/customer-models';
 import { CreateOrderRequest, ProductListItemDto } from '../../../../shared/models/api-models';
+import { FeedbackService } from '../../../../core/services/feedback.service';
 import { OrderService } from '../../services/order.service';
 import { CustomerSearchTypeaheadComponent } from '../customer-search-typeahead/customer-search-typeahead.component';
 import { ProductSearchTypeaheadComponent } from '../product-search-typeahead/product-search-typeahead.component';
@@ -15,15 +16,6 @@ import { ProductSearchTypeaheadComponent } from '../product-search-typeahead/pro
   template: `
     <div class="order-create-container">
       <h2>Criar Novo Pedido</h2>
-
-      <div *ngIf="submitSuccess" class="alert alert-success" role="status">
-        <p>{{ submitSuccess }} <span *ngIf="createdOrderId">Código: {{ createdOrderId }}</span></p>
-        <button type="button" class="btn-link" (click)="goToOrdersList()">Ver lista de pedidos</button>
-      </div>
-
-      <div *ngIf="submitError" class="alert alert-error" role="alert">
-        {{ submitError }}
-      </div>
 
       <form [formGroup]="orderForm" novalidate>
         <section>
@@ -146,25 +138,6 @@ import { ProductSearchTypeaheadComponent } from '../product-search-typeahead/pro
 
     section {
       margin-bottom: 2rem;
-    }
-
-    .alert {
-      padding: 1rem;
-      border-radius: 6px;
-      margin-bottom: 1.5rem;
-      border: 1px solid transparent;
-    }
-
-    .alert-success {
-      background-color: #d1e7dd;
-      border-color: #badbcc;
-      color: #0f5132;
-    }
-
-    .alert-error {
-      background-color: #f8d7da;
-      border-color: #f5c2c7;
-      color: #842029;
     }
 
     .btn-link {
@@ -355,9 +328,6 @@ export class OrderCreateContainerComponent implements OnInit {
   orderForm!: FormGroup;
   formSubmitted = false;
   isSubmitting = false;
-  submitError: string | null = null;
-  submitSuccess: string | null = null;
-  createdOrderId: string | null = null;
   selectedCustomer: CustomerListItemDto | null = null;
 
   @ViewChild(CustomerSearchTypeaheadComponent) private customerLookup?: CustomerSearchTypeaheadComponent;
@@ -365,7 +335,8 @@ export class OrderCreateContainerComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly orderService: OrderService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly feedback: FeedbackService
   ) {}
 
   ngOnInit(): void {
@@ -382,7 +353,7 @@ export class OrderCreateContainerComponent implements OnInit {
   onCustomerSelected(customer: CustomerListItemDto): void {
     this.selectedCustomer = customer;
     this.orderForm.patchValue({ customerId: customer.id });
-    this.submitError = null;
+    this.feedback.clear();
   }
 
   onCustomerCleared(): void {
@@ -400,14 +371,13 @@ export class OrderCreateContainerComponent implements OnInit {
   }
 
   onProductSelected(product: ProductListItemDto): void {
-    this.submitError = null;
-    this.submitSuccess = null;
+    this.feedback.clear();
 
     const availableStockRaw = Number(product.stockQty ?? 0);
     const availableStock = Number.isFinite(availableStockRaw) ? Math.max(0, Math.floor(availableStockRaw)) : 0;
 
     if (availableStock <= 0) {
-      this.submitError = 'Produto selecionado está sem estoque disponível.';
+      this.feedback.error('Produto selecionado está sem estoque disponível.');
       return;
     }
 
@@ -474,9 +444,7 @@ export class OrderCreateContainerComponent implements OnInit {
 
   submitOrder(): void {
     this.formSubmitted = true;
-    this.submitError = null;
-    this.submitSuccess = null;
-    this.createdOrderId = null;
+    this.feedback.clear();
 
     if (this.orderForm.invalid || this.items.length === 0) {
       return;
@@ -500,26 +468,21 @@ export class OrderCreateContainerComponent implements OnInit {
     this.orderService.createOrder(payload).subscribe({
       next: orderId => {
         this.isSubmitting = false;
-        this.submitSuccess = 'Pedido criado com sucesso.';
-        this.createdOrderId = orderId;
+        this.feedback.success(`Pedido criado com sucesso. Código: ${orderId}`);
         this.resetForm();
+        this.router.navigate(['/orders', orderId]);
       },
       error: error => {
         this.isSubmitting = false;
-        this.submitError = error?.message ?? 'Falha ao criar pedido.';
+        const message = error?.message ?? 'Falha ao criar pedido.';
+        this.feedback.error(message);
       }
     });
   }
 
   cancelOrder(): void {
-    this.submitError = null;
-    this.submitSuccess = null;
-    this.createdOrderId = null;
+    this.feedback.clear();
     this.resetForm();
-  }
-
-  goToOrdersList(): void {
-    this.router.navigate(['/orders']);
   }
 
   private resetForm(): void {

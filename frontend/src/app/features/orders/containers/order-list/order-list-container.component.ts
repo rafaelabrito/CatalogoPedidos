@@ -9,6 +9,7 @@ import { PagedResult, OrderListItemDto, OrderStatus } from '../../../../shared/m
 import { OrderTableComponent } from '../../../../shared/components/order-table/order-table.component';
 import { PaginationComponent } from '../../../../shared/components/pagination/pagination.component';
 import { Router } from '@angular/router';
+import { FeedbackService } from '../../../../core/services/feedback.service';
 
 @Component({
   selector: 'app-order-list-container',
@@ -181,7 +182,7 @@ export class OrderListContainerComponent implements OnInit {
   // Opções de Status (baseado na enumeração do backend)
   statusOptions: Array<'ALL' | OrderStatus> = ['ALL', 'CREATED', 'PAID', 'CANCELLED'];
 
-  constructor(private orderService: OrderService, private router: Router) {}
+  constructor(private orderService: OrderService, private router: Router, private feedback: FeedbackService) {}
 
   ngOnInit(): void {
     
@@ -226,6 +227,7 @@ export class OrderListContainerComponent implements OnInit {
       error: (error) => {
         console.error('Erro ao carregar pedidos:', error);
         this.isLoading.set(false);
+        this.feedback.error(error?.message ?? 'Falha ao carregar pedidos.');
       }
     });
   }

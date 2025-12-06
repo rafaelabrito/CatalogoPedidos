@@ -7,14 +7,18 @@ import {
   HttpErrorResponse,
   HttpInterceptorFn
 } from '@angular/common/http';
+import { inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApiResponse } from '../../shared/models/api-response.interface';
+import { FeedbackService } from '../services/feedback.service';
 
 export const ErrorHandlingInterceptor: HttpInterceptorFn = (
   request: HttpRequest<unknown>,
   next: HttpHandlerFn
 ): Observable<HttpEvent<unknown>> => {
+  const feedback = inject(FeedbackService);
+
   return next(request).pipe(
     // 1. Processa Respostas de SUCESSO com cod_retorno = 1
     map((event: HttpEvent<unknown>) => {
@@ -24,6 +28,7 @@ export const ErrorHandlingInterceptor: HttpInterceptorFn = (
         // Se a API retornar 200/201, mas o envelope indicar erro (cod_retorno: 1) 
         if (body && body.cod_retorno === 1) {
           const errorMsg = body.mensagem || 'Ocorreu um erro de negócio não especificado.';
+          feedback.error(errorMsg);
           
           // Lança um erro para que o componente/service possa tratar
           throw new Error(errorMsg); 
@@ -59,6 +64,7 @@ export const ErrorHandlingInterceptor: HttpInterceptorFn = (
            errorMsg = 'Serviço indisponível. Verifique sua conexão ou tente mais tarde.';
       }
       
+      feedback.error(errorMsg);
       return throwError(() => new Error(errorMsg));
     })
   );
