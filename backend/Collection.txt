@@ -1,0 +1,151 @@
+{
+	"info": {
+		"_postman_id": "a9e6b47c-5d9c-4b5b-8f3e-0f04c7c8c9e0",
+		"name": "Gestão de Pedidos CRUD (Orders)",
+		"description": "Endpoints do OrdersController com Idempotência e Query Otimizada (CQRS/Dapper).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_uid": "12345678-b1a0-4c28-98e0-13f68d6f5f3e"
+	},
+	"item": [
+		{
+			"name": "1. POST /orders - Criar Pedido (Transação Atômica)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Captura o orderId do payload de sucesso e salva na variável de ambiente/coleção",
+							"const response = pm.response.json();",
+							"if (response && response.cod_retorno === 0 && response.data) {",
+							"    pm.environment.set(\"orderId\", response.data);",
+							"    console.log(\"orderId capturado: \" + response.data);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "Idempotency-Key",
+						"value": "{{idempotencyKey}}",
+						"description": "Chave de Idempotência Única para garantir que o pedido só seja processado uma vez."
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"items\": [\n    {\n      \"productId\": \"{{productId}}\",\n      \"quantity\": 2\n    }\n  ]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/orders",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"orders"
+					]
+				},
+				"description": "Cria um novo pedido. A lógica de negócio (validar estoque e transação) é executada. Tente enviar duas vezes a mesma Idempotency-Key para testar o bloqueio."
+			},
+			"response": []
+		},
+		{
+			"name": "2. GET /orders - Listar Pedidos (Query Dapper Otimizada)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/orders?pageNumber=1&pageSize=10&statusFilter=CREATED",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"orders"
+					],
+					"query": [
+						{
+							"key": "pageNumber",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "10"
+						},
+						{
+							"key": "statusFilter",
+							"value": "CREATED",
+							"description": "Filtro opcional. Ex: CREATED, PAID, CANCELLED."
+						},
+						{
+							"key": "customerNameFilter",
+							"value": "Nome",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Retorna a lista paginada e filtrada de pedidos. Usa o Dapper para performance."
+			},
+			"response": []
+		},
+		{
+			"name": "3. GET /orders/:id - Detalhes do Pedido",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/orders/{{orderId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"orders",
+						"{{orderId}}"
+					]
+				},
+				"description": "Retorna os detalhes completos de um pedido específico. Deve ser executado após o POST (item 1)."
+			},
+			"response": []
+		},
+		{
+			"name": "4. PUT /orders/:id/cancelar - Ação de Cancelamento",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/orders/{{orderId}}/cancelar",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"orders",
+						"{{orderId}}",
+						"cancelar"
+					]
+				},
+				"description": "Simula a ação de cancelar um pedido. O PUT é usado para modificar o estado (status) do recurso."
+			},
+			"response": []
+		}
+	]
+}

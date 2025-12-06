@@ -1,0 +1,70 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  # ----------------------------------------
+  # 1. SERVIÇO DO BANCO DE DADOS (PostgreSQL)
+  # ----------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: desafio_postgres_db
+    environment:
+      POSTGRES_DB: catalogo_pedidos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    # restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d catalogo_pedidos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ----------------------------------------
+  # 2. SERVIÇO DO BACKEND (.NET 8 Web API)
+  # ----------------------------------------
+  backend:
+    build:
+      context: ./backend # Caminho para o Dockerfile do backend
+      dockerfile: Dockerfile
+      args:
+        - CONFIGURATION=Release # Build otimizado
+    restart: always
+    ports:
+      - "5000:8080" # Mapeia a porta do contêiner para a porta local
+    environment:
+      # Connection String que o .NET 8 usará (referencia o serviço 'db')
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}"
+      ASPNETCORE_URLS: "http://+:8080"
+    depends_on:
+      db:
+        condition: service_healthy # Garante que o banco esteja pronto antes de subir
+    networks:
+      - app-network
+
+  # ----------------------------------------
+  # 3. SERVIÇO DO FRONTEND (Angular 17+)
+  # ----------------------------------------
+  frontend:
+    build:
+      context: ./frontend # Caminho para o Dockerfile do frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "4200:80" # Nginx servindo Angular na porta 80 do contêiner
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,1 @@
+// Deprecated placeholder kept to avoid breaking include paths. Real implementation lives in CustomerQueryRepository.cs.

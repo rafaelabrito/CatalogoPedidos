@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  # 1. Serviço de Banco de Dados PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: desafio_postgres_db
+    environment:
+      POSTGRES_DB: catalog_db
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: secretpassword
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    # volumes:
+    #   - postgres_data:/var/lib/postgresql/data
+    # restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d catalog_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Serviço de Backend (.NET API)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - CONFIGURATION=Release
+    container_name: desafio_backend_api
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:5000"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=catalog_db;Username=appuser;Password=secretpassword"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # 3. Serviço do Frontend (Angular)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: desafio_frontend_ng
+    restart: always
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

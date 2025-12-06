@@ -1,0 +1,1 @@
+// NOTE: This interface was misplaced. Removing content to avoid Domain->Application dependency.

@@ -1,0 +1,173 @@
+{
+	"info": {
+		"_postman_id": "c1f2d3e4-a5b6-c7d8-e9f0-1a2b3c4d5e6f",
+		"name": "Gestão de Clientes CRUD",
+		"description": "Endpoints para o CRUD completo da entidade Cliente.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. POST /customers - Criar Cliente",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Captura o customerId do payload de sucesso e salva na variável de ambiente/coleção",
+							"const response = pm.response.json();",
+							"if (response && response.cod_retorno === 0 && response.data) {",
+							"    pm.environment.set(\"customerId\", response.data);",
+							"    console.log(\"customerId capturado: \" + response.data);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Fernando Teste Silva\",\n  \"email\": \"fernando.teste@exemplo.com\",\n  \"document\": \"77766655544\",\n  \"password\": \"senha123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/customers",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers"
+					]
+				},
+				"description": "Cria um novo cliente. O ID retornado é salvo como variável (customerId)."
+			},
+			"response": []
+		},
+		{
+			"name": "2. GET /customers - Listar Clientes (Query Otimizada)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/customers?pageNumber=1&pageSize=10&filter=Silva",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers"
+					],
+					"query": [
+						{
+							"key": "pageNumber",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "10"
+						},
+						{
+							"key": "filter",
+							"value": "Silva",
+							"description": "Filtro opcional por Nome ou Documento."
+						},
+						{
+							"key": "sortBy",
+							"value": "CreatedAt",
+							"description": "Campo para ordenação. Ex: Name, CreatedAt.",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Retorna a lista paginada e filtrada de clientes (Usando Query Handler)."
+			},
+			"response": []
+		},
+		{
+			"name": "3. GET /customers/:id - Detalhes do Cliente",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/customers/{{customerId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers",
+						"{{customerId}}"
+					]
+				},
+				"description": "Busca os detalhes do cliente criado no item 1."
+			},
+			"response": []
+		},
+		{
+			"name": "4. PUT /customers/:id - Atualizar Cliente",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": \"{{customerId}}\",\n  \"name\": \"Fernando Teste Silva - ATUALIZADO\",\n  \"email\": \"novo.email@teste.com\",\n  \"document\": \"77766655544\",\n  \"password\": \"senhaAtualizada456\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/customers/{{customerId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers",
+						"{{customerId}}"
+					]
+				},
+				"description": "Atualiza os dados do cliente (EF Core Repositório é chamado)."
+			},
+			"response": []
+		},
+		{
+			"name": "5. DELETE /customers/:id - Excluir Cliente",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/customers/{{customerId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"customers",
+						"{{customerId}}"
+					]
+				},
+				"description": "Exclui o cliente do banco de dados (EF Core Repositório é chamado)."
+			},
+			"response": []
+		}
+	]
+}
