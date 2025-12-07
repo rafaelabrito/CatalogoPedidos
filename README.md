@@ -1,6 +1,7 @@
 # Catálogo & Pedidos — Monorepo
 
 Projeto full-stack com **.NET 8** (API) e **Angular 17** (SPA) para gerenciamento de produtos, clientes e pedidos, empacotado com **PostgreSQL** e **Docker Compose**. O repositório consolida infraestrutura, backend, frontend e scripts de verificação para facilitar a entrega end-to-end do desafio.
+<img width="1344" height="644" alt="detalhe_pedido" src="https://github.com/user-attachments/assets/1ebcb2d9-d39d-44ec-9703-10ac82f0a42f" />
 
 ## Sumário
 - [Arquitetura Geral](#arquitetura-geral)
