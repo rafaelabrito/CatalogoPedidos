@@ -18,7 +18,12 @@ import { FeedbackService } from '../../../core/services/feedback.service';
         [attr.role]="severity() === 'error' ? 'alert' : 'status'"
         [attr.aria-live]="severity() === 'error' ? 'assertive' : 'polite'"
       >
-        <span class="message">{{ message() }}</span>
+        <div class="message-wrapper">
+          <span class="message">{{ message() }}</span>
+          <span *ngIf="correlationId()" class="correlation-id">
+            ID de correlação: {{ correlationId() }}
+          </span>
+        </div>
         <button type="button" class="close-btn" (click)="dismiss()" aria-label="Fechar alerta">
           &times;
         </button>
@@ -36,7 +41,7 @@ import { FeedbackService } from '../../../core/services/feedback.service';
 
     .feedback-banner {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 1rem;
       padding: 1rem 1.25rem;
       border-radius: 10px;
@@ -44,9 +49,22 @@ import { FeedbackService } from '../../../core/services/feedback.service';
       font-size: 0.95rem;
     }
 
-    .message {
+    .message-wrapper {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
       line-height: 1.4;
+    }
+
+    .message {
+      font-weight: 500;
+    }
+
+    .correlation-id {
+      font-size: 0.8125rem;
+      color: inherit;
+      opacity: 0.85;
     }
 
     .feedback-success {
@@ -100,6 +118,7 @@ export class FeedbackBannerComponent {
   readonly message = computed(() => this.current()?.message ?? '');
   readonly severity = computed(() => this.current()?.severity ?? 'info');
   readonly visible = computed(() => this.current() !== null);
+  readonly correlationId = computed(() => this.current()?.correlationId ?? null);
 
   dismiss(): void {
     this.feedbackService.clear();

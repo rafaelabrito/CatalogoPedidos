@@ -5,6 +5,7 @@ export type FeedbackSeverity = 'success' | 'error' | 'info';
 interface FeedbackState {
   message: string;
   severity: FeedbackSeverity;
+  correlationId?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -13,20 +14,20 @@ export class FeedbackService {
 
   readonly current = computed(() => this.state());
 
-  show(severity: FeedbackSeverity, message: string): void {
-    this.state.set({ severity, message });
+  show(severity: FeedbackSeverity, message: string, correlationId?: string | null): void {
+    this.state.set({ severity, message, correlationId: correlationId ?? null });
   }
 
-  success(message: string): void {
-    this.show('success', message);
+  success(message: string, correlationId?: string | null): void {
+    this.show('success', message, correlationId);
   }
 
-  error(message: string): void {
-    this.show('error', message);
+  error(message: string, correlationId?: string | null): void {
+    this.show('error', message, correlationId);
   }
 
-  info(message: string): void {
-    this.show('info', message);
+  info(message: string, correlationId?: string | null): void {
+    this.show('info', message, correlationId);
   }
 
   clear(): void {

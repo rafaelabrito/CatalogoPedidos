@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
 import { ErrorHandlingInterceptor } from './core/interceptors/error-handling.interceptor';
+import { CorrelationIdInterceptor } from './core/interceptors/correlation-id.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -10,7 +11,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(
       withFetch(),
-      withInterceptors([ErrorHandlingInterceptor])
+      withInterceptors([CorrelationIdInterceptor, ErrorHandlingInterceptor])
     )
   ]
 };
