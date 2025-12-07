@@ -2,6 +2,8 @@
 
 Aplicação SPA que consome a API de Catálogo & Pedidos. A tela de pedidos inclui busca por cliente, criação com idempotência e validação de estoque, listagem paginada/filtrável e visualização detalhada. Todos os serviços usam o envelope `ApiResponse` retornado pelo backend e exibem mensagens acessíveis via banner global com ID de correlação.
 
+<img width="1359" height="649" alt="gestao_de_produto" src="https://github.com/user-attachments/assets/14cb5984-9f35-47d5-a7dd-0efd4c72f9b9" />
+
 ## Pré-requisitos
 - Node.js 20.x e npm 10.x
 - Backend rodando em `http://localhost:5000` (via Docker Compose ou `dotnet run`).
