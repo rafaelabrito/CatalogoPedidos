@@ -34,5 +34,7 @@ dotnet test backend.sln
 ```
 (Esse comando também é executado pelos scripts `scripts/verify.*` na raiz.)
 
+![docker-desktop](https://github.com/user-attachments/assets/af7fd943-4ed4-4438-88ca-f2fbb1225830)
+
 #### Configuração Docker
 O `backend/Dockerfile` faz publish apenas do projeto `Api`. Use `docker compose up --build` na raiz para subir API + PostgreSQL + Frontend.
