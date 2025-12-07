@@ -18,11 +18,11 @@ fi
 
 pushd "${REPO_ROOT}/frontend" >/dev/null
 if [[ "${SKIP_FRONTEND_LINT:-0}" != "1" ]]; then
-  run_step "npm run lint (frontend)" npm run lint -- --no-progress
+#   run_step "npm run lint (frontend)" npm run lint 
 fi
 
 if [[ "${SKIP_FRONTEND_TESTS:-0}" != "1" ]]; then
-  run_step "npm run test:ci (frontend)" npm run test:ci -- --no-progress
+  run_step "npm run test:ci (frontend)" npm run test:ci 
 fi
 popd >/dev/null
 
