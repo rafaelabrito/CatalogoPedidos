@@ -6,11 +6,11 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copia arquivos de configuração de dependências
-COPY package.json package-lock.json ./
-RUN npm install # Instala as dependências
+COPY package.json ./
+COPY . ./
+RUN npm install -f
 
 # Copia o restante do código e compila
-COPY . .
 # Adapte o comando 'ng build' conforme a sua configuração de Angular
 RUN npm run build -- --output-path=./dist --configuration=production
 

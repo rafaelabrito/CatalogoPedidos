@@ -1,0 +1,15 @@
+# **/dist/
+# **/obj/
+# **/.vs/
+# **/.idea/
+# **/.vscode/
+# .git
+# .angular
+# .gitignore
+# dist/
+node_modules/
+# scripts/
+package-lock.json
+# .env
+# .env.*
+
