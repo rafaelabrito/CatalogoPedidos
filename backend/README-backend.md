@@ -2,6 +2,9 @@
 
 API ASP.NET Core estruturada em camadas (Domain, Application, Infrastructure e Api). Responsável pelos CRUDs de produtos, clientes e pedidos, incluindo criação idempotente de pedidos.
 
+
+<img width="1359" height="649" alt="swagger_documentação_endpoints" src="https://github.com/user-attachments/assets/8b3ca785-c2e8-44c9-98a1-2cc0200ee06c" />
+
 #### Pré-requisitos
 - .NET SDK 8.0
 - PostgreSQL local (opcional quando não estiver usando Docker Compose)
