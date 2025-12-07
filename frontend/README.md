@@ -1,37 +1,52 @@
-# Frontend1
+# Frontend — Angular 17
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
+Aplicação SPA que consome a API de Catálogo & Pedidos. A tela de pedidos inclui busca por cliente, criação com idempotência e validação de estoque, listagem paginada/filtrável e visualização detalhada. Todos os serviços usam o envelope `ApiResponse` retornado pelo backend e exibem mensagens acessíveis via banner global com ID de correlação.
 
-## Default Ports and URLs
+## Pré-requisitos
+- Node.js 20.x e npm 10.x
+- Backend rodando em `http://localhost:5000` (via Docker Compose ou `dotnet run`).
 
-| Serviço            | URL / Host              | Observações |
-|--------------------|-------------------------|-------------|
-| 🌐 Frontend (Angular dev server) | `http://localhost:4200/` | Execute `npm start`/`ng serve --port 4200`. Se a porta estiver em uso (por exemplo, pelo container frontend do Docker), libere-a antes de iniciar o dev‑server (`docker stop fullstack-dotnet8-angular17-catalogo-pedidos_frontend_1` ou finalize qualquer processo Node nessa porta) para evitar que o Angular escolha uma porta aleatória. |
-| 🔧 Backend API (.NET) | `http://localhost:5000/` | Inclui Swagger em `http://localhost:5000/swagger/index.html`. O proxy do Angular (`proxy.conf.json`) já encaminha `/api` para este endereço. |
-| 🗄️ PostgreSQL       | `localhost:5432`        | Utilize as credenciais definidas em `.env`/`.env.example`. |
+## Instalação
+```powershell
+npm install
+```
 
-Manter essas portas fixas facilita o roteamento do proxy, o consumo dos endpoints e a configuração compartilhada entre frontend, backend e scripts de automação.
+## Servidor de desenvolvimento
+```powershell
+npm start
+```
+- Usa `ng serve --proxy-config proxy.conf.json --port 4200`
+- O proxy redireciona `/api` para `http://localhost:5000`
+- Caso a porta 4200 esteja ocupada, libere-a (por exemplo, parando o container `frontend`) antes de iniciar o dev-server
 
-## Development server
+## Build de produção
+```powershell
+npm run build
+```
+Os artefatos ficam em `dist/frontend1/`.
 
-Run `npm start` (or `ng serve --proxy-config proxy.conf.json --port 4200`) for a dev server. The application will automatically reload if you change any of the source files.
+## Testes e lint
+- `npm run lint` — validação ESLint
+- `npm run test` — modo interativo com Karma + Jasmine
+- `npm run test:ci` — mesma suíte em modo headless (usada nos scripts `scripts/verify.*`)
 
-## Code scaffolding
+## Estrutura relevante
+- `src/app/features/orders` — fluxos de pedidos (create/list/details)
+- `src/app/core/interceptors` — interceptors de envelope, erro e `X-Correlation-ID`
+- `src/app/shared/components/feedback-banner` — banner global para mensagens e correlação
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## Variáveis importantes
+- `proxy.conf.json` — configurações de proxy para o backend local
+- `environment.*.ts` não são utilizados; as URLs são relativas (`/api`) para facilitar uso com proxy e Docker
 
-## Build
+## Portas padrão
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+| Serviço | Porta | Observação |
+|---------|-------|------------|
+| Angular dev server | 4200 | `npm start` |
+| Backend API | 5000 | Swagger em `/swagger/index.html` |
+| PostgreSQL | 5432 | Credenciais definidas no `.env` da raiz |
 
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+## Ferramentas úteis
+- `npm run lint -- --fix` para autofix quando disponível
+- `npm run test -- --watch=false` para rodar uma vez em ambiente interativo
