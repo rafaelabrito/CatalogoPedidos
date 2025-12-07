@@ -1,0 +1,173 @@
+{
+	"info": {
+		"_postman_id": "9b1c7c8d-6e5a-4f2b-8b5e-0c1d2e3f4a5b",
+		"name": "Catálogo de Produtos CRUD",
+		"description": "Endpoints para o CRUD completo da entidade Produto.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. POST /products - Criar Produto",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Captura o productId do payload de sucesso e salva na variável de ambiente/coleção",
+							"const response = pm.response.json();",
+							"if (response && response.cod_retorno === 0 && response.data) {",
+							"    pm.environment.set(\"productId\", response.data);",
+							"    console.log(\"productId capturado: \" + response.data);",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Smartwatch Pro X\",\n  \"sku\": \"SW-PRO-001\",\n  \"price\": 899.99,\n  \"stockQty\": 75,\n  \"isActive\": true\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/products",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"products"
+					]
+				},
+				"description": "Cria um novo produto. O ID retornado é salvo como variável (productId)."
+			},
+			"response": []
+		},
+		{
+			"name": "2. GET /products - Listar Produtos (Query Otimizada)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/products?pageNumber=1&pageSize=10&filter=Smartwatch",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"products"
+					],
+					"query": [
+						{
+							"key": "pageNumber",
+							"value": "1"
+						},
+						{
+							"key": "pageSize",
+							"value": "10"
+						},
+						{
+							"key": "filter",
+							"value": "Smartwatch",
+							"description": "Filtro opcional por Nome ou SKU."
+						},
+						{
+							"key": "sortBy",
+							"value": "Name",
+							"description": "Campo para ordenação. Ex: Price, CreatedAt.",
+							"disabled": true
+						}
+					]
+				},
+				"description": "Retorna a lista paginada e filtrada de produtos (ListProductsQueryHandler usa Dapper)."
+			},
+			"response": []
+		},
+		{
+			"name": "3. GET /products/:id - Detalhes do Produto",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/products/{{productId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"products",
+						"{{productId}}"
+					]
+				},
+				"description": "Busca os detalhes do produto criado no item 1."
+			},
+			"response": []
+		},
+		{
+			"name": "4. PUT /products/:id - Atualizar Produto",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Smartwatch Pro X - ATUALIZADO\",\n  \"sku\": \"SW-PRO-001\",\n  \"price\": 799.00,\n  \"stockQty\": 100, \n  \"isActive\": true\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/products/{{productId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"products",
+						"{{productId}}"
+					]
+				},
+				"description": "Atualiza o produto. Note que o ID no corpo não é necessário, mas a URL deve conter o ID (EF Core Repositório é chamado)."
+			},
+			"response": []
+		},
+		{
+			"name": "5. DELETE /products/:id - Excluir Produto",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/products/{{productId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"products",
+						"{{productId}}"
+					]
+				},
+				"description": "Exclui o produto do banco de dados (EF Core Repositório é chamado)."
+			},
+			"response": []
+		}
+	]
+}

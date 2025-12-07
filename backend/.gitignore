@@ -6,7 +6,7 @@
 ## has more thorough IDE-specific entries.
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
-docs/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -22,8 +22,7 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
-data-volumes/
-.env
+
 # .NET Core
 project.lock.json
 project.fragment.lock.json
@@ -53,3 +52,4 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+.env

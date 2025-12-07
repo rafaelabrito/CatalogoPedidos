@@ -1,0 +1,148 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Classe utilitária para screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Melhorar foco para navegação por teclado */
+*:focus-visible {
+  outline: 2px solid #0d6efd;
+  outline-offset: 2px;
+}
+
+/* Garantir que links e botões tenham áreas de clique adequadas */
+a, button {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Skip link para acessibilidade */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #0d6efd;
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f8f9fa;
+  color: #212529;
+  line-height: 1.6;
+}
+
+html, body {
+  height: 100%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+@media (max-width: 768px) {
+  .customer-crud-container {
+    padding: 0 1rem 2rem;
+  }
+
+  .customer-crud-container .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .customer-crud-container .header-section .btn-primary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .customer-crud-container .table-wrapper {
+    margin: 1rem 0;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .customer-crud-container .crud-table {
+    display: block;
+    background: none;
+  }
+
+  .customer-crud-container .crud-table thead {
+    display: none;
+  }
+
+  .customer-crud-container .crud-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .customer-crud-container .crud-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.75rem;
+    background-color: #fff;
+  }
+
+  .customer-crud-container .crud-table td {
+    display: flex;
+    flex-direction: column;
+    padding: 0.35rem 0;
+    border: none;
+    font-size: 0.95rem;
+    word-break: break-word;
+  }
+
+  .customer-crud-container .crud-table td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.15rem;
+  }
+
+  .customer-crud-container .crud-table td.actions {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+}

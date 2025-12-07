@@ -1,0 +1,1 @@
+// This placeholder existed before but the real implementation lives in ProductQueryRepository.cs
